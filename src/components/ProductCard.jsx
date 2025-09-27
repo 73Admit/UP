@@ -1,39 +1,44 @@
-import { useState } from 'react'
+import { useState } from 'react';
+import { useCart } from '../contexts/CartContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
-const ProductCard = ({ 
-  name, 
-  price, 
-  image, 
-  category, 
-  quantity = 0,
-  onAddToCart, 
-  onRemoveFromCart,
-  onRemoveAllFromCart 
-}) => {
-  const [isAdded, setIsAdded] = useState(false)
+const ProductCard = ({ product }) => {
+  const { addToCart } = useCart();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const [isAdded, setIsAdded] = useState(false);
 
   const handleAddToCart = () => {
-    onAddToCart()
-    setIsAdded(true)
-    setTimeout(() => setIsAdded(false), 1000)
-  }
+    if (!isAuthenticated) {
+      // Перенаправляем на страницу логина с возвратом обратно
+      navigate('/login', { state: { from: { pathname: '/' } } });
+      return;
+    }
+    
+    addToCart(product);
+    setIsAdded(true);
+    setTimeout(() => setIsAdded(false), 1000);
+  };
 
-  const handleRemoveFromCart = () => {
-    onRemoveFromCart()
-  }
-
-  const handleRemoveAll = () => {
-    onRemoveAllFromCart()
-  }
+  const handleBuyNow = () => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: { pathname: '/' } } });
+      return;
+    }
+    
+    addToCart(product);
+    navigate('/cart');
+  };
 
   return (
     <div className="product-card">
-      <div className="product-badge">{category}</div>
+      <div className="product-badge">{product.category}</div>
       
       <div className="product-image-container">
         <img 
-          src={image} 
-          alt={name}
+          src={product.image} 
+          alt={product.name}
           className="product-image"
         />
         <div className="product-overlay">
@@ -44,73 +49,28 @@ const ProductCard = ({
             >
               {isAdded ? '✓ Добавлено' : '+ Добавить'}
             </button>
-            
-            {quantity > 0 && (
-              <div className="quantity-controls-overlay">
-                <button 
-                  className="quantity-btn overlay-btn"
-                  onClick={handleRemoveFromCart}
-                >
-                  -
-                </button>
-                <span className="quantity-overlay">×{quantity}</span>
-                <button 
-                  className="quantity-btn overlay-btn"
-                  onClick={handleAddToCart}
-                >
-                  +
-                </button>
-              </div>
-            )}
+            <button 
+              className="buy-now-btn"
+              onClick={handleBuyNow}
+            >
+              Купить сейчас
+            </button>
           </div>
         </div>
       </div>
 
       <div className="product-content">
-        <h3 className="product-name">{name}</h3>
-        <p className="product-category">{category}</p>
+        <h3 className="product-name">{product.name}</h3>
+        <p className="product-category">{product.category}</p>
         <div className="product-footer">
-          <span className="product-price">{price.toLocaleString('ru-RU')} ₽</span>
-          
-          {quantity > 0 ? (
-            <div className="product-quantity-controls">
-              <div className="quantity-buttons">
-                <button 
-                  className="quantity-btn small"
-                  onClick={handleRemoveFromCart}
-                  title="Убрать один"
-                >
-                  -
-                </button>
-                <span className="quantity-display">{quantity}</span>
-                <button 
-                  className="quantity-btn small"
-                  onClick={handleAddToCart}
-                  title="Добавить еще"
-                >
-                  +
-                </button>
-              </div>
-              <button 
-                className="remove-all-btn small"
-                onClick={handleRemoveAll}
-                title="Убрать все"
-              >
-                
-              </button>
-            </div>
-          ) : (
-            <button 
-              className="add-to-cart-btn"
-              onClick={handleAddToCart}
-            >
-              В корзину
-            </button>
+          <span className="product-price">{product.price.toLocaleString('ru-RU')} ₽</span>
+          {!isAuthenticated && (
+            <small className="auth-required">*Требуется вход</small>
           )}
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default ProductCard
+export default ProductCard;
